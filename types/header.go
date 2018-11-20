@@ -4,15 +4,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mz-eco/ui"
+	"github.com/mz-eco/memoir"
 )
 
 type HttpHeader http.Header
 
-func (m HttpHeader) Component() ui.Component {
+func (m HttpHeader) Component() memoir.Component {
 
 	var (
-		ul = ui.NewNameValueList("Header")
+		ul = memoir.NewNameValueList("Header")
 	)
 
 	for name, value := range m {

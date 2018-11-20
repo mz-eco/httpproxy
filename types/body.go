@@ -1,13 +1,13 @@
 package types
 
 import (
-	"github.com/mz-eco/ui"
+	"github.com/mz-eco/memoir"
 )
 
 type HttpBody struct {
 	Body []byte
 }
 
-func (m *HttpBody) BodyUI() *ui.DataView {
-	return ui.NewDataView("Body", m.Body)
+func (m *HttpBody) BodyUI() *memoir.DataView {
+	return memoir.NewDataView("Body", m.Body)
 }

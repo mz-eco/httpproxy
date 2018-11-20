@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/mz-eco/ui"
+	"github.com/mz-eco/memoir"
 )
 
 type Translate struct {
@@ -53,22 +53,22 @@ func (m *Translate) Summary() *Summary {
 	}
 }
 
-func (m *Translate) Document() *ui.Document {
+func (m *Translate) Document() *memoir.Document {
 
-	return ui.NewDocument(
-		ui.DocHtmlTranslate,
+	return memoir.NewDocument(
+		memoir.DocHtmlTranslate,
 		"HttpTranslate",
 		m.Summary(),
-		ui.NewLabel("Value",
+		memoir.NewLabel("Value",
 			HttpQuery(m.URL.Query()),
 			HttpHeader(m.Ask.Value.Header),
-			ui.NewDataView(
+			memoir.NewDataView(
 				"Body",
 				m.Ask.Body),
 		),
-		ui.NewLabel("Value",
+		memoir.NewLabel("Value",
 			HttpHeader(m.Ack.Value.Header),
-			ui.NewDataView(
+			memoir.NewDataView(
 				"Body",
 				m.Ack.Body),
 		),

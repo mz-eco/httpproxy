@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/mz-eco/ui"
+	"github.com/mz-eco/memoir"
 )
 
 type Summary struct {
@@ -19,10 +19,10 @@ type Summary struct {
 	TimeUsed   time.Duration
 }
 
-func (m *Summary) Component() ui.Component {
-	return ui.NewKeyValues(
+func (m *Summary) Component() memoir.Component {
+	return memoir.NewKeyValues(
 		"Summary",
-		ui.KeyValue{
+		memoir.KeyValue{
 			"Method":     m.Method,
 			"Url":        m.Url,
 			"Host":       m.Host,

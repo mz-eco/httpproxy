@@ -4,15 +4,15 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mz-eco/ui"
+	"github.com/mz-eco/memoir"
 )
 
 type HttpQuery url.Values
 
-func (m HttpQuery) Component() ui.Component {
+func (m HttpQuery) Component() memoir.Component {
 
 	var (
-		ul = ui.NewNameValueList("Query")
+		ul = memoir.NewNameValueList("Query")
 	)
 
 	for name, value := range m {
