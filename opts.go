@@ -9,3 +9,11 @@ func WithTSL(cert, key string) Opt {
 		return nil
 	}
 }
+
+func WithAddr(addr string) Opt {
+
+	return func(p *Proxy) error {
+		p.address = addr
+		return nil
+	}
+}

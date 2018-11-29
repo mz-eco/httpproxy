@@ -1,17 +1,32 @@
 package httpproxy
 
-import "github.com/mz-eco/httpproxy/types"
+import (
+	"sync"
+
+	"github.com/mz-eco/http"
+)
 
 type Source struct {
-	contexts []*types.Translate
+	lock     sync.Mutex
+	size     int
+	contexts []*http.Translate
 }
 
-func (m *Source) Add(ctx *types.Translate) {
-	m.contexts = append(m.contexts, ctx)
+func (m *Source) Add(tx *http.Translate) {
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.contexts = append(m.contexts, tx)
+	m.size++
 }
 
 func NewSource() *Source {
 	return &Source{
-		contexts: make([]*types.Translate, 0),
+		contexts: make([]*http.Translate, 0),
 	}
+}
+
+func (m *Source) GetSize() int {
+	return m.size
 }

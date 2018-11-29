@@ -9,10 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/mz-eco/httpproxy/types"
 	"github.com/mz-eco/httpproxy/utils"
-
-	"github.com/gobwas/glob"
 
 	"context"
 )
@@ -50,8 +47,23 @@ type Proxy struct {
 
 	source *Source
 
-	//groups
-	groups *Groups
+	//hooks
+	hooks *Hooks
+
+	addr    net.Addr
+	address string
+
+	running bool
+	err     error
+}
+
+func (m *Proxy) IsRunning() bool {
+	return m.running
+}
+
+func (m *Proxy) GetTranslates() int {
+
+	return m.source.GetSize()
 }
 
 func (m *Proxy) copyHeaders(source, target http.Header) {
@@ -61,67 +73,6 @@ func (m *Proxy) copyHeaders(source, target http.Header) {
 			target.Add(key, value)
 		}
 	}
-}
-
-func (m *Proxy) do(url *url.URL, w http.ResponseWriter, r *http.Request) {
-
-	var (
-		handler = m.groups.GetHandler(r.URL)
-		ctx     = types.NewContext()
-		err     error
-		check   = func(err error) bool {
-			if err != nil {
-				ctx.Error = err
-				handler.Error(ctx, err)
-				return true
-			}
-			return false
-		}
-	)
-
-	defer func() {
-		m.source.Add(ctx)
-	}()
-
-	ctx.URL = url
-	ctx.Ask, err = types.NewHttpRequest(r)
-
-	if check(err) {
-		return
-	}
-
-	err = handler.OnRequest(ctx)
-
-	if check(err) {
-		return
-	}
-
-	ask, err := ctx.Ask.GetRequest(ctx.URL)
-
-	if check(err) {
-		return
-	}
-
-	response, err := m.c.Do(ask)
-	handler.OnResponse(ctx, err)
-
-	if check(err) {
-		return
-	}
-
-	ctx.Ack, err = types.NewResponse(response)
-
-	if check(err) {
-		return
-	}
-
-	err = ctx.Ack.Write(w)
-
-	if check(err) {
-		return
-	}
-
-	handler.Done(ctx)
 }
 
 func (m *Proxy) onProxyHandler(schema string, w http.ResponseWriter, r *http.Request) {
@@ -226,14 +177,14 @@ func (m *Proxy) ServeHTTP(ack http.ResponseWriter, ask *http.Request) {
 		m.fileHandler.ServeHTTP(ack, ask)
 	}
 
-	if m.groups.Match(ask.URL) {
+	if m.hooks.Match(ask.URL) {
 		m.ServeProxy(ack, ask)
 	} else {
 		m.serveTranslate(ack, ask)
 	}
 }
 
-func (m *Proxy) Run(addr string) error {
+func (m *Proxy) Server() error {
 
 	m.fileHandler = http.FileServer(
 		http.Dir("./"))
@@ -243,41 +194,43 @@ func (m *Proxy) Run(addr string) error {
 	}
 
 	go func() {
-		fmt.Println(
-			m.https.ServeTLS(m.tlsListener, m.certFile, m.keyFile))
+		m.err = m.https.ServeTLS(m.tlsListener, m.certFile, m.keyFile)
 	}()
 
-	go func() {
-		err := RunApiServer(":24800", m.source)
+	l, err := net.Listen("tcp", m.address)
 
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println("api server run at ", ":24800")
-		}
-	}()
+	if err != nil {
+		return err
+	}
 
-	fmt.Println("Proxy start on ", addr)
-	return http.ListenAndServe(addr, m)
+	m.addr = l.Addr()
+	m.running = true
+
+	srv := &http.Server{
+		Handler: m,
+	}
+
+	srv.RegisterOnShutdown(func() {
+		m.running = false
+	})
+
+	go srv.Serve(l)
+
+	return nil
 
 }
 
-func (m *Proxy) Group(host string, handler Handler) {
-
-	var (
-		g = &Group{
-			glob:    glob.MustCompile(host),
-			handler: handler,
-		}
-	)
-
-	m.groups.handlers = append(m.groups.handlers, g)
+func (m *Proxy) GetAddr() net.Addr {
+	return m.addr
 }
 
+func (m *Proxy) GetError() error {
+	return m.err
+}
 func New(opts ...Opt) (*Proxy, error) {
 
 	px := &Proxy{
-		groups: NewGroups(),
+		hooks:  NewHookers(),
 		tls:    make(chan net.Conn),
 		source: NewSource(),
 		c: &http.Client{
