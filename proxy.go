@@ -66,6 +66,10 @@ func (m *Proxy) GetTranslates() int {
 	return m.source.GetSize()
 }
 
+func (m *Proxy) Source() *Source {
+	return m.source
+}
+
 func (m *Proxy) copyHeaders(source, target http.Header) {
 
 	for key, values := range source {
